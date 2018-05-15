@@ -16,6 +16,7 @@ import (
 	"github.com/rancher/os/log"
 	"github.com/rancher/os/util"
 	"golang.org/x/net/context"
+	"bytes"
 )
 
 const (
@@ -184,29 +185,43 @@ func applyPreConsole(cfg *rancherConfig.CloudConfig) {
 
 func resizeDevice(cfg *rancherConfig.CloudConfig) error {
 	cmd := exec.Command("growpart", cfg.Rancher.ResizeDevice, "1")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Run()
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	var execerr bytes.Buffer
+	cmd.Stderr = &execerr
+	error := cmd.Run()
+	if error != nil {
+		log.Infof("============= growpart resize error %s \n", execerr.String())
+		return error
+	}
+	log.Infof("============= growpart resize ouput %s \n", out.String())
 
 	cmd = exec.Command("partprobe", cfg.Rancher.ResizeDevice)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = &out
+	cmd.Stderr = &execerr
 	err := cmd.Run()
 	if err != nil {
+		log.Infof("============= partprobe resize error %s \n", execerr.String())
 		return err
 	}
+	log.Infof("============= partprobe resize ouput %s \n", out.String())
 
 	targetPartition := fmt.Sprintf("%s1", cfg.Rancher.ResizeDevice)
 	if strings.Contains(cfg.Rancher.ResizeDevice, "nvme") {
 		targetPartition = fmt.Sprintf("%sp1", cfg.Rancher.ResizeDevice)
 	}
+
+	log.Infof("=========targetPartition is %s \n", targetPartition)
+
 	cmd = exec.Command("resize2fs", targetPartition)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = &out
+	cmd.Stderr = &execerr
 	err = cmd.Run()
 	if err != nil {
+		log.Infof("============= resize2fs resize error %s \n", execerr.String())
 		return err
 	}
+	log.Infof("============= resize2fs resize ouput %s \n", out.String())
 
 	return nil
 }
