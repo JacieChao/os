@@ -146,8 +146,11 @@ func WriteFiles(cfg *rancherConfig.CloudConfig, container string) {
 }
 
 func applyPreConsole(cfg *rancherConfig.CloudConfig) {
+	log.Info("================ apply pre console begin ===============")
 	if cfg.Rancher.ResizeDevice != "" {
+		log.Infof("resize device is %s \n", cfg.Rancher.ResizeDevice)
 		if _, err := os.Stat(resizeStamp); os.IsNotExist(err) {
+			log.Infof("begin to resize device %s \n", cfg.Rancher.ResizeDevice)
 			if err := resizeDevice(cfg); err == nil {
 				os.Create(resizeStamp)
 			} else {
