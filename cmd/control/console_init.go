@@ -176,6 +176,12 @@ func consoleInitFunc() error {
 		return err
 	}
 
+	// fix docker-top for console switch
+	cmd = exec.Command("sudo", "ln", "-s", "/bin/ps", "/usr/bin/ps")
+	if err := cmd.Run(); err != nil {
+		log.Error(err)
+	}
+
 	return syscall.Exec(respawnBinPath, []string{"respawn", "-f", "/etc/respawn.conf"}, os.Environ())
 }
 
